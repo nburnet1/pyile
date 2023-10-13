@@ -1,0 +1,13 @@
+{
+    "general": {
+        "alias": "Admin"
+    },
+    "auth_peer": {
+        "password_attempts_allowed": 3,
+        "port": 4702,
+        "shadow": "testa"
+    },
+    "join_peer": {
+        "port": 4702
+    }
+}
