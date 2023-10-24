@@ -125,7 +125,8 @@ class GUI(UI):
         self.config.json_contents["join_peer"]["port"] = join_port
         self.config.write_json(self.config.json_contents)
 
-        self.peer = JoinPeer(address=(self.config.ip, join_port), alias=alias, messenger=Messenger())
+        # 192.168.1.65
+        self.peer = JoinPeer(address=("self.config.ip", join_port), alias=alias, messenger=Messenger())
         try:
             self.peer.get_authenticated((ip, port), shadow)
         except Exception as e:
@@ -138,15 +139,14 @@ class GUI(UI):
         self.main_notebook.select(1)
         connect_tab.destroy()
 
-
-
-    def auth(self, shadow, port, allowed_attempts, alias):
+    def auth(self, shadow, port, allowed_attempts, alias, admin_tab):
         self.config.json_contents["general"]["alias"] = alias
         self.config.json_contents["auth_peer"]["port"] = port
         self.config.json_contents["auth_peer"]["password_attempts_allowed"] = allowed_attempts
         self.config.json_contents["auth_peer"]["shadow"] = shadow
 
-        self.peer = AuthPeer(address=(self.config.ip, port), alias=alias, messenger=Messenger(),
+        # 192.168.1.65
+        self.peer = AuthPeer(address=("self.config.ip", port), alias=alias, messenger=Messenger(),
                              password_attempts=allowed_attempts, password=shadow)
 
         print(self.peer)
@@ -156,6 +156,7 @@ class GUI(UI):
         peer_thread.start()
 
         self.main_notebook.select(1)
+        admin_tab.destroy()
 
     def exit_gui(self):
         if self.peer is not None:
@@ -229,6 +230,33 @@ class GUI(UI):
                 else:
                     self.peer.send(self.selected_conversation, message, self.selected_conversation)
             entry.focus_set()
+
+    def status_check(self, peer_view, banned_view, limbo_view, dist_view, view_lengths):
+        def redraw(i):
+            def tree_insert(view, view_list):
+                view.delete(*view.get_children())
+                for i in view_list:
+                    view.insert("", "end", iid=i, text=i)
+
+            if i == 0:
+                tree_insert(peer_view, self.peer.peers)
+            elif i == 1:
+                tree_insert(banned_view, self.peer.blocked_peers)
+            elif i == 2:
+                tree_insert(limbo_view, self.peer.limbo_peers)
+            elif i == 3:
+                tree_insert(dist_view, self.peer.dist_sockets)
+
+        if self.peer is not None:
+            temp_list = [len(self.peer.peers), len(self.peer.blocked_peers), len(self.peer.limbo_peers),
+                         len(self.peer.dist_sockets)]
+
+            for i in range(len(temp_list)):
+                if temp_list[i] != view_lengths[i]:
+                    view_lengths[i] = temp_list[i]
+                    redraw(i)
+
+        peer_view.after(1000, lambda: self.status_check(peer_view, banned_view, limbo_view, dist_view, view_lengths))
 
     def start(self):
         def check_for_errors():
@@ -410,13 +438,80 @@ class GUI(UI):
                                       command=lambda: self.auth(
                                           password_entry.get(), int(port_entry.get()),
                                           int(allowed_attempts_entry.get()),
-                                          alias_entry.get()
+                                          alias_entry.get(), admin_tab
                                       ))
             start_button.pack(side="bottom", expand=True, fill="x", pady=10)
 
-        def settings_tab():
-            settings_tab = ttk.Frame(self.main_notebook)
-            self.main_notebook.add(settings_tab, text="Settings")
+        def status_tab():
+            status_tab = ttk.Frame(self.main_notebook)
+            self.main_notebook.add(status_tab, text="Status")
+
+            tree_frame = ttk.Frame(status_tab)
+            tree_frame.pack(side="left", expand=True, fill="both")
+
+            dist_frame = ttk.Frame(tree_frame)
+            dist_frame.pack(side="bottom", expand=True, fill="both")
+            dist_scroll = ttk.Scrollbar(dist_frame)
+            dist_scroll.pack(side="right", fill="y")
+            # Treeview
+            dist_view = ttk.Treeview(dist_frame, selectmode="extended", yscrollcommand=dist_scroll.set,
+                                     height=12)
+            dist_view.pack(expand=True, fill="both", side="left")
+            dist_view.yview_moveto(1.0)
+            dist_scroll.config(command=dist_view.yview)
+
+            # Treeview columns
+            dist_view.column("#0", width=120)
+
+            # Treeview headings
+            dist_view.heading("#0", text="Distribute Connections", anchor="center")
+
+            limbo_scroll = ttk.Scrollbar(tree_frame)
+            limbo_scroll.pack(side="right", fill="y")
+            # Treeview
+            limbo_view = ttk.Treeview(tree_frame, selectmode="extended", yscrollcommand=limbo_scroll.set,
+                                      height=12)
+            limbo_view.pack(expand=True, fill="both", side="right")
+            limbo_view.yview_moveto(1.0)
+            limbo_scroll.config(command=limbo_view.yview)
+
+            # Treeview columns
+            limbo_view.column("#0", width=120)
+
+            # Treeview headings
+            limbo_view.heading("#0", text="Limbo Peers", anchor="center")
+
+            banned_scroll = ttk.Scrollbar(tree_frame)
+            banned_scroll.pack(side="right", fill="y")
+            # Treeview
+            banned_view = ttk.Treeview(tree_frame, selectmode="extended", yscrollcommand=banned_scroll.set,
+                                       height=12)
+            banned_view.pack(expand=True, fill="both", side="right")
+            banned_view.yview_moveto(1.0)
+            banned_scroll.config(command=banned_view.yview)
+
+            # Treeview columns
+            banned_view.column("#0", width=120)
+
+            # Treeview headings
+            banned_view.heading("#0", text="Banned Peers", anchor="center")
+
+            peer_scroll = ttk.Scrollbar(tree_frame)
+            peer_scroll.pack(side="right", fill="y")
+            # Treeview
+            peer_view = ttk.Treeview(tree_frame, selectmode="extended", yscrollcommand=peer_scroll.set,
+                                     height=12)
+            peer_view.pack(expand=True, fill="both", side="left")
+            peer_view.yview_moveto(1.0)
+            peer_scroll.config(command=peer_view.yview)
+
+            # Treeview columns
+            peer_view.column("#0", width=120)
+
+            # Treeview headings
+            peer_view.heading("#0", text="Peers", anchor="center")
+
+            self.status_check(peer_view, banned_view, limbo_view, dist_view, [0, 0, 0, 0])
 
         def log_tab():
             def update_treeview(self, tree_view, value):
@@ -499,12 +594,11 @@ class GUI(UI):
 
         if self.config.argu.start:
             admin_tab()
+            status_tab()
         else:
             connect_tab()
 
         message_tab()
-
-        settings_tab()
 
         log_tab()
 
