@@ -8,10 +8,9 @@ def arg_check():
                         help="starts the connection as an Authenticating Peer, by default joins a connection.",
                         action="store_true", default=False)
     parser.add_argument('-i', '--ip', help="IPV4 that the starter node is at", nargs='?', type=str, default=None)
-    parser.add_argument('-p', '--port', help="Port that the starter node is listening", nargs='?', type=int,
-                        default=4702)
-    parser.add_argument('-j', '--join_port', help="Port for joining node", nargs='?', type=int, default=4702)
-    parser.add_argument('-g', '--gui', help="Launches GUI rather than command line", action="store_true", default=False)
+    parser.add_argument('-p', '--port', help="Port that the starter node is listening", nargs='?', type=int)
+    parser.add_argument('-j', '--join_port', help="Port for joining node", nargs='?', type=int)
+    parser.add_argument('-g', '--gui', help="Launches GUI rather than command line", action="store_true", default=True)
     parser.add_argument('-a', '--alias', help="Specifies the alias used to connect", nargs='?', type=str,
                         default=None)
     parser.add_argument('-c', '--config', help="Specifies the config file to use", nargs='?', type=str,
@@ -69,4 +68,3 @@ class Configuration:
                 return False
 
         return True
-

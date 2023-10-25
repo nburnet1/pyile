@@ -29,18 +29,19 @@ class GUI(UI):
 
         config_window(self.info_window)
 
+        self.info_window.geometry("300x300")
         self.info_window = configure_window_grid(self.info_window, 7, 7, 1, 1)
+
+        header = ttk.Label(self.info_window, text="Info:",
+                           font=("TkDefaultFont", 16))
+        header.pack(side="top", fill="x")
 
         contents = tk.Text(self.info_window,
                            font=("TkDefaultFont", 14))
-        contents.grid(row=1, column=4, padx=10, pady=(30, 10), sticky="nsew")
+        contents.pack(side="top", fill="both", padx=10, pady=10)
         contents.insert(tk.END, message)
 
-        self.info_window.update()
-        self.info_window.minsize(self.info_window.winfo_width(), self.info_window.winfo_height())
-        x_coordinate = calc_screen(self.info_window.winfo_screenwidth(), self.info_window.winfo_width())
-        y_coordinate = calc_screen(self.info_window.winfo_screenheight(), self.info_window.winfo_height())
-        self.info_window.geometry("+{}+{}".format(x_coordinate, y_coordinate))
+        center_window(self.info_window)
 
     def warning_popup(self, message):
         self.warning_window = tk.Tk()
@@ -48,14 +49,18 @@ class GUI(UI):
 
         config_window(self.warning_window)
 
+        self.warning_window.geometry("300x300")
         self.warning_window = configure_window_grid(self.warning_window, 7, 7, 1, 1)
 
         self.main_window.state("withdrawn")
         self.warning_window.protocol("WM_DELETE_WINDOW", lambda: self.on_popup_close(self.warning_window))
 
+        header = ttk.Label(self.warning_window, text="Warning:",
+                           font=("TkDefaultFont", 16))
+        header.pack(side="top", fill="x")
         contents = tk.Text(self.warning_window,
                            font=("TkDefaultFont", 14))
-        contents.grid(row=1, column=4, padx=10, pady=(30, 10), sticky="nsew")
+        contents.pack(side="top", fill="both", padx=10, pady=10)
         contents.insert(tk.END, message)
 
         center_window(self.warning_window)
@@ -70,11 +75,11 @@ class GUI(UI):
         self.error_window = configure_window_grid(self.error_window, 7, 7, 1, 1)
         header = ttk.Label(self.error_window, text="Error:",
                            font=("TkDefaultFont", 16))
-        header.grid(row=0, column=3, padx=10, pady=(30, 10), sticky="nsew", columnspan=1)
-        subheader = ttk.Label(self.error_window,
-                              text=message,
-                              font=("TkDefaultFont", 14))
-        subheader.grid(row=1, column=4, padx=10, pady=(30, 10), sticky="nsew", columnspan=1)
+        header.pack(side="top", fill="x")
+        contents = tk.Text(self.error_window,
+                           font=("TkDefaultFont", 14))
+        contents.pack(side="top", fill="both", padx=10, pady=10)
+        contents.insert(tk.END, message)
         self.main_window.state("withdrawn")
         self.error_window.protocol("WM_DELETE_WINDOW", lambda: self.exit_gui())
         center_window(self.error_window)
@@ -126,7 +131,7 @@ class GUI(UI):
         self.config.write_json(self.config.json_contents)
 
         # 192.168.1.65
-        self.peer = JoinPeer(address=("self.config.ip", join_port), alias=alias, messenger=Messenger())
+        self.peer = JoinPeer(address=(self.config.ip, join_port), alias=alias, messenger=Messenger())
         try:
             self.peer.get_authenticated((ip, port), shadow)
         except Exception as e:
@@ -146,7 +151,7 @@ class GUI(UI):
         self.config.json_contents["auth_peer"]["shadow"] = shadow
 
         # 192.168.1.65
-        self.peer = AuthPeer(address=("self.config.ip", port), alias=alias, messenger=Messenger(),
+        self.peer = AuthPeer(address=(self.config.ip, port), alias=alias, messenger=Messenger(),
                              password_attempts=allowed_attempts, password=shadow)
 
         print(self.peer)
@@ -304,7 +309,7 @@ class GUI(UI):
             port_label = ttk.Label(port_frame, text="Authenticating Port: ")
             port_label.pack(side="left")
             port_entry = ttk.Entry(port_frame)
-            if self.config.json_contents["join_peer"]["port"] is not None:
+            if self.config.json_contents["auth_peer"]["port"] is not None:
                 port_entry.insert(0, self.config.json_contents["auth_peer"]["port"])
             elif self.config.argu.port is not None:
                 port_entry.insert(0, self.config.argu.port)
@@ -410,8 +415,8 @@ class GUI(UI):
             port_label = ttk.Label(port_frame, text="Port: ")
             port_label.pack(side="left")
             port_entry = ttk.Entry(port_frame)
-            if self.config.json_contents["join_peer"]["port"] is not None:
-                port_entry.insert(0, self.config.json_contents["join_peer"]["port"])
+            if self.config.json_contents["auth_peer"]["port"] is not None:
+                port_entry.insert(0, self.config.json_contents["auth_peer"]["port"])
             elif self.config.argu.port is not None:
                 port_entry.insert(0, self.config.argu.port)
             port_entry.pack(side="right")
@@ -605,5 +610,4 @@ class GUI(UI):
         self.main_notebook = configure_window_grid(self.main_notebook, 1, 1, 1, 1)
 
         center_window(self.main_window)
-
         self.main_window.mainloop()
